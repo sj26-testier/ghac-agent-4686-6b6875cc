@@ -1,0 +1,27 @@
+name: Released agent workflow control
+on: push
+permissions:
+  contents: read
+jobs:
+  checkout-and-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.17.0'
+          token: ''
+      - name: Verify checkout and action outcome
+        shell: bash
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(node --version)" = v22.17.0
+          printf 'CHECKOUT_SHA=%s\nACTION_NODE=%s\n' "$(git rev-parse HEAD)" "$(node --version)"
+          if [[ ${BUILDKITE:-} == true ]]; then
+            test -f /.dockerenv
+            buildkite-agent --version
+            printf 'EXECUTOR_IMAGE=%s\n' "${BUILDKITE_IMAGE:?}"
+          fi
